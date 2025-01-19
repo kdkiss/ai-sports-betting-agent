@@ -1,26 +1,26 @@
 # Sports Betting Analysis System
 
-A comprehensive AI-powered sports betting analysis system that combines traditional statistics, web insights, and AI predictions to provide detailed betting recommendations.
+An AI-powered sports betting analysis system that uses advanced LLM technology to analyze betting slips and provide detailed recommendations for player props and parlays.
 
 ## Features
 
-### Multi-Sport Analysis
-- NFL, NBA, UFC betting analysis
-- Player props and game analysis
-- Multi-sport parlay evaluation
-- Cross-sport correlation detection
+### Intelligent Bet Analysis
+- Dynamic player and team identification
+- Automated bet extraction from betting slips
+- Smart validation of bet completeness
+- Risk assessment and analysis
 
-### AI-Powered Analysis
-- DeepSeek AI integration for predictions
-- Web scraping for latest insights
-- Sentiment analysis of news and trends
-- Risk assessment and value detection
+### LLM Integration
+- DeepSeek AI for bet analysis
+- Intelligent player name correction
+- Dynamic bet type recognition
+- Confidence-based filtering
 
 ### Advanced Analytics
 - Expected value calculations
-- Correlation analysis
-- Risk-adjusted metrics
-- Portfolio optimization
+- Risk assessment
+- Historical performance analysis
+- Statistical validation
 
 ## Setup
 
@@ -29,8 +29,6 @@ A comprehensive AI-powered sports betting analysis system that combines traditio
 - API keys for:
   - DeepSeek API
   - Sports Data API
-  - Weather API
-  - Odds API
 
 ### Installation
 ```bash
@@ -56,125 +54,90 @@ Create a `.env` file with the following:
 ```
 DEEPSEEK_API_KEY=your_deepseek_api_key
 SPORTS_DATA_API_KEY=your_sports_data_api_key
-WEATHER_API_KEY=your_weather_api_key
-ODDS_API_KEY=your_odds_api_key
 ```
 
 ## Usage
 
-### Basic Analysis
+### Bet Analysis
 ```python
-from src.coordinator.sports_betting_coordinator import SportsBettingCoordinator
+from src.services.bet_analyzer import BetAnalyzer
 
-coordinator = SportsBettingCoordinator()
+analyzer = BetAnalyzer()
 
-# Analyze a single bet
-analysis = await coordinator.analyze_bet(
-    "NFL Patriots vs Bills under 47.5"
-)
-
-# Analyze a parlay
-parlay_analysis = await coordinator.analyze_bet(
-    """
-    NFL: Patriots vs Bills under 47.5
-    NBA: Lakers -5.5 vs Warriors
-    UFC: Jon Jones by KO/TKO
-    """
-)
+# Analyze betting slip
+analysis = await analyzer.analyze_bets("""
+    J. Hurts o/u 250.5 passing yards -110
+    C. Kupp anytime TD +140
+    T. Kelce o/u 70.5 receiving yards -115
+""")
 ```
 
 ### Understanding Results
 The analysis includes:
-- Overall recommendation
-- Confidence level
-- Expected value
+- Identified players and teams
+- Validated bet components
 - Risk assessment
-- Key factors
-- News insights
-- Expert opinions
-- AI predictions
+- Statistical analysis
+- Historical performance
 
 ### Response Format
 ```json
 {
-    "recommendation": "Consider",
-    "confidence": 0.75,
-    "expected_value": 0.15,
-    "risk_assessment": "Medium",
-    "key_factors": [
-        "Strong historical trend",
-        "Weather impact likely",
-        "Key player injury"
+    "bets": [
+        {
+            "player": "Jalen Hurts",
+            "team": "Philadelphia Eagles",
+            "bet_type": "passing_yards",
+            "line": 250.5,
+            "odds": -110,
+            "analysis": {
+                "confidence": "high",
+                "historical_avg": 245.3,
+                "recommendation": "consider"
+            }
+        }
     ],
-    "news_summary": [...],
-    "expert_opinions": [...],
-    "ai_insights": [...]
+    "overall_analysis": {
+        "complete_legs": 3,
+        "risk_level": "medium",
+        "recommendations": [...]
+    }
 }
 ```
 
 ## System Architecture
 
 ### Components
-1. **Sport Agents**
-   - Sport-specific analysis
-   - Historical data processing
-   - Matchup evaluation
+1. **Bet Analyzer**
+   - LLM-based bet extraction
+   - Player identification
+   - Validation logic
+   - Risk analysis
 
 2. **Data Clients**
-   - Sports data retrieval
-   - Odds monitoring
-   - Weather information
-   - News and trends
+   - Sports statistics
+   - Historical performance
+   - Player data
 
-3. **AI Integration**
+3. **LLM Integration**
    - DeepSeek API client
-   - Natural language processing
-   - Sentiment analysis
-   - Pattern recognition
-
-4. **Coordinator**
-   - Request routing
-   - Multi-source analysis
-   - Correlation detection
-   - Final recommendations
+   - Intelligent text processing
+   - Confidence-based filtering
 
 ### Data Flow
-1. User submits bet for analysis
-2. System identifies sports and bet types
-3. Relevant data is gathered from multiple sources
-4. Sport-specific agents perform analysis
-5. AI models provide predictions
-6. Results are combined and enhanced
-7. Final recommendation is generated
-
-## Performance Optimization
-
-### Caching
-- API responses cached for 1 hour
-- Weather data cached for 3 hours
-- News and trends cached for 1 hour
-
-### Parallel Processing
-- Concurrent API calls
-- Parallel sport analysis
-- Asynchronous data gathering
-
-### Rate Limiting
-- API call throttling
-- Request queuing
-- Automatic retries
+1. User submits betting slip
+2. System extracts and validates bets
+3. Players and teams are identified
+4. Statistical analysis is performed
+5. Final recommendations generated
 
 ## Error Handling
 
-### API Failures
-- Automatic retries with exponential backoff
-- Fallback to cached data
-- Graceful degradation
-
-### Data Quality
-- Validation of input data
-- Confidence adjustments for missing data
-- Warning system for incomplete analysis
+### Validation
+- Incomplete bet filtering
+- Player name verification
+- Line and odds validation
+- Data quality checks
 
 ### System Health
 - Request logging
@@ -183,44 +146,25 @@ The analysis includes:
 
 ## Best Practices
 
-### Responsible Betting
-- Risk warnings
-- Bankroll management advice
-- Correlation awareness
-- Portfolio diversification
-
 ### Analysis Quality
-- Multiple data sources
-- Cross-validation
-- Confidence thresholds
+- Confidence thresholds for player identification
+- Complete information requirements
+- Statistical validation
 - Regular updates
-
-## Maintenance
-
-### Updates
-- Daily sports data refresh
-- Hourly odds monitoring
-- Real-time news tracking
-
-### Monitoring
-- System health checks
-- API status monitoring
-- Performance metrics
-- Error logging
 
 ## Support
 
 ### Common Issues
-- API connection problems
-- Rate limit exceeded
-- Data inconsistencies
-- Analysis timeout
+- OCR text quality
+- Incomplete bet information
+- Player identification accuracy
+- API connection issues
 
 ### Troubleshooting
-1. Check API status
-2. Verify API keys
-3. Clear cache if needed
-4. Check system logs
+1. Check bet slip text quality
+2. Verify all bet components
+3. Check API status
+4. Review system logs
 
 ## Contributing
 - Fork the repository

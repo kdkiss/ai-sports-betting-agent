@@ -1,200 +1,129 @@
-# User Guide
+# Sports Betting Analysis System User Guide
 
-## Getting Started
+## Overview
 
-The Sports Betting Analysis System helps you analyze betting opportunities across multiple sports, with a focus on identifying value and managing risk in parlays.
+The Sports Betting Analysis System helps analyze betting slips, focusing on player props and providing risk assessment for each bet.
 
-### Supported Sports
-- NFL (Football)
-- NBA (Basketball)
-- UFC (Mixed Martial Arts)
+## Features
+
+### Bet Extraction
+- Automatically extracts bets from betting slip images
+- Handles OCR text correction
+- Identifies player names, teams, and bet types
+- Validates bet lines and odds
+
+### Supported Bet Types
+- Passing Yards
+- Receiving Yards
+- Other player props (expanding)
+
+### Risk Analysis
+The system analyzes each bet for:
+- Line value assessment
+- Odds evaluation
+- Player performance context
+- Team context impact
 
 ## Using the System
 
-### Single Sport Bets
+### Bet Slip Analysis
 
-You can analyze individual bets by providing a description. The system understands natural language input:
+1. Submit a betting slip image
+2. The system will:
+   - Extract text using OCR
+   - Identify valid bets
+   - Skip unclear or incomplete bets
+   - Analyze each valid bet
 
-```
-"Chiefs -3.5 vs Raiders"
-"Lakers team total over 115.5"
-"Patrick Mahomes over 280.5 passing yards"
-```
+### Understanding Results
 
-### Parlay Analysis
+Each bet analysis includes:
+1. **Player Information**
+   - Name
+   - Team
+   - Bet type
+   - Line
+   - Odds
 
-For parlays, list multiple bets. The system will analyze each leg and their relationships:
+2. **Risk Assessment**
+   - Overall risk level (High/Medium/Low)
+   - Risk factors
+   - Safety factors
 
-```
-"Parlay:
-Chiefs ML
-Lakers -5.5
-UFC Adesanya by KO"
-```
-
-### Player Props
-
-When analyzing player props, include:
-- Player name
-- Stat type
-- Line
-- Optional: Game context
-
-Examples:
-```
-"Steph Curry over 28.5 points vs Suns"
-"Travis Kelce receiving yards over 75.5 in weather"
-```
-
-## Understanding Results
-
-### Analysis Components
-
-1. **Recommendation**
-   - Pass: Not recommended
-   - Consider: Potential value
-   - Strong Consider: High confidence opportunity
-
-2. **Expected Value**
-   - Positive: Potentially profitable
-   - Higher numbers indicate better value
-   - Adjusted for correlations in parlays
-
-3. **Risk Assessment**
-   - Low: Standard risk level
-   - Medium: Some concerns
-   - High: Significant risk factors
-
-4. **Key Factors**
-   - Important considerations
-   - Risk warnings
-   - Correlation notes
+3. **Context Analysis**
+   - Player performance metrics
+   - Team context
+   - Historical averages
 
 ### Sample Output
-
 ```json
 {
-    "recommendation": "Consider",
-    "confidence": 0.75,
-    "expected_value": 0.15,
-    "risk_assessment": "Medium",
-    "key_factors": [
-        "Strong historical performance",
-        "Favorable matchup",
-        "Weather could be a factor"
+    "overall_risk": "Medium",
+    "legs": [
+        {
+            "player": "Jalen Hurts",
+            "bet_type": "Passing Yards",
+            "line": 179.0,
+            "odds": -186,
+            "is_risky": false,
+            "is_safe": true,
+            "risk_factors": [],
+            "safety_factors": ["Line below player average"]
+        }
     ]
 }
 ```
 
+## Validation Rules
+
+### Passing Yards
+- Valid range: 150-400 yards
+- Odds range: -500 to +500
+
+### Receiving Yards
+- Valid range: 20-150 yards
+- Odds range: -500 to +500
+
 ## Best Practices
 
 ### Do's
-1. Provide clear, specific bet descriptions
-2. Include relevant context (weather, injuries, etc.)
-3. Check all key factors before betting
-4. Consider correlation warnings in parlays
+1. Ensure betting slip image is clear
+2. Wait for complete analysis
+3. Review all risk factors
+4. Check for missing bet information
 
 ### Don'ts
-1. Ignore risk assessments
-2. Overlook correlation warnings
-3. Bet without checking current odds
-4. Disregard weather impacts
-
-## Advanced Features
-
-### Weather Analysis
-For outdoor sports (NFL), the system considers:
-- Temperature
-- Wind speed
-- Precipitation
-- Impact on different bet types
-
-### Correlation Detection
-The system identifies:
-- Same-day games
-- Related markets
-- Common external factors
-- Shared dependencies
-
-### Value Calculation
-Incorporates:
-- Current odds
-- Historical data
-- Situational factors
-- Risk adjustments
-
-## Tips for Better Results
-
-1. **Detailed Input**
-   - Include team names
-   - Specify bet types
-   - Mention relevant conditions
-
-2. **Multiple Analysis**
-   - Compare different lines
-   - Check alternate markets
-   - Analyze various combinations
-
-3. **Risk Management**
-   - Review all warnings
-   - Check correlation factors
-   - Consider Kelly criterion sizing
-
-4. **Market Timing**
-   - Monitor line movements
-   - Check for late updates
-   - Consider timing recommendations
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Unclear Results**
-   - Provide more specific input
-   - Include all relevant details
-   - Check for missing context
-
-2. **High Risk Warnings**
-   - Review all risk factors
-   - Check for correlations
-   - Consider reducing parlay size
-
-3. **Low Confidence Scores**
-   - Look for missing data
-   - Check for recent updates
-   - Consider waiting for more information
-
-### Getting Help
-
-If you encounter issues:
-1. Check the documentation
-2. Review example formats
-3. Ensure all required data is provided
-4. Contact support for persistent problems
+1. Submit unclear images
+2. Ignore missing bet components
+3. Skip risk assessment review
 
 ## Limitations
 
 The system:
-- Requires current odds data
-- Needs historical statistics
-- May have delayed updates
-- Cannot predict certainties
+- Requires clear betting slip images
+- May skip unclear player names
+- Needs complete bet information
+- Works best with player props
 
-## Responsible Betting
+## Error Handling
 
-Remember to:
-- Set proper limits
-- Follow bankroll management
-- Consider all warnings
-- Never chase losses
-- Bet responsibly
+Common scenarios:
+1. **Unclear Player Names**
+   - System will skip these bets
+   - Example: "mauinew susnura" → skipped
 
-## Updates and Maintenance
+2. **Missing Information**
+   - Bets without lines or odds are skipped
+   - Incomplete bet types are ignored
 
-The system is regularly updated with:
-- New sports coverage
-- Enhanced analysis
-- Improved correlations
-- Better risk assessment
+3. **Invalid Values**
+   - Lines outside valid ranges are flagged
+   - Extreme odds are validated
 
-Check documentation for latest features and improvements. 
+## Future Enhancements
+
+Planned improvements:
+- More bet types
+- Enhanced player stats
+- Additional sports coverage
+- Improved OCR handling 

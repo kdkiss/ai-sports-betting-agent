@@ -4,183 +4,147 @@
 
 ### Core Components
 
-1. **Base Agent (`BaseAgent`)** - Abstract base class for all sport-specific agents
-   - Provides common analysis methods
-   - Handles data client initialization
-   - Implements shared calculations (EV, Kelly, risk assessment)
+1. **Bet Analyzer (`BetAnalyzer`)** - Main class for bet analysis
+   - Handles bet extraction and validation
+   - Manages LLM integration
+   - Performs statistical analysis
+   - Implements risk assessment
 
-2. **Sport-Specific Agents**
-   - `NFLBettingAgent`: Football analysis
-   - `NBABettingAgent`: Basketball analysis
-   - `UFCBettingAgent`: MMA analysis
-   Each implements:
-   - Sport-specific prop types
-   - Custom analysis methods
-   - Sport-specific risk factors
+2. **LLM Integration**
+   - Uses DeepSeek AI for:
+     - Player identification
+     - Team recognition
+     - Bet type classification
+     - Validation checks
 
-3. **Coordinator (`SportsBettingCoordinator`)**
-   - Manages all sport-specific agents
-   - Handles multi-sport parlay analysis
-   - Performs correlation detection
-   - Generates final recommendations
-
-4. **Data Clients**
+3. **Data Client**
    - `SportsDataClient`: Historical stats and performance data
-   - `OddsClient`: Real-time odds from multiple bookmakers
-   - `WeatherClient`: Weather data for outdoor sports
+   - Player statistics
+   - Team information
+   - Historical performance metrics
 
 ### Data Flow
 
 ```mermaid
 graph TD
-    A[User Input] --> B[Sport Identifier]
-    B --> C{Single/Multi Sport}
-    C -->|Single| D[Sport Agent]
-    C -->|Multi| E[Multiple Agents]
-    D --> F[Data Clients]
-    E --> F
-    F --> G[Analysis]
-    G --> H[Recommendation]
+    A[Betting Slip] --> B[Text Normalization]
+    B --> C[LLM Analysis]
+    C --> D[Player/Team Identification]
+    D --> E[Bet Validation]
+    E --> F[Stats Analysis]
+    F --> G[Final Recommendation]
 ```
 
 ## API Reference
 
-### SportsBettingCoordinator
+### BetAnalyzer
 
 ```python
-class SportsBettingCoordinator:
-    async def analyze_bet(text: str) -> Dict[str, Any]:
+class BetAnalyzer:
+    async def analyze_bets(text: str) -> Dict[str, Any]:
         """
-        Analyzes a betting opportunity from text input.
+        Analyzes betting opportunities from a betting slip.
         
         Args:
-            text: Description of the bet(s) to analyze
+            text: Betting slip text
             
         Returns:
             Dictionary containing analysis results
         """
 
-    async def _analyze_multi_sport_parlay(
-        text: str,
-        sports: List[str]
-    ) -> Dict[str, Any]:
-        """
-        Analyzes a parlay involving multiple sports.
-        
-        Args:
-            text: Original bet description
-            sports: List of identified sports
-            
-        Returns:
-            Dictionary containing parlay analysis
-        """
-```
-
-### BaseAgent
-
-```python
-class BaseAgent(ABC):
-    @abstractmethod
-    async def analyze(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Analyzes a betting opportunity.
-        
-        Args:
-            context: Dictionary containing all relevant information
-            
-        Returns:
-            Dictionary containing analysis results
-        """
-
-    def _calculate_expected_value(
+    async def _extract_bets(
         self,
-        probability: float,
-        odds: float
-    ) -> float:
+        text: str
+    ) -> List[Dict[str, Any]]:
         """
-        Calculates expected value of a bet.
+        Extracts individual bets from betting slip text.
         
         Args:
-            probability: Estimated probability of winning
-            odds: American odds for the bet
+            text: Original betting slip text
             
         Returns:
-            Expected value as a decimal
+            List of dictionaries containing extracted bets
+        """
+
+    async def _normalize_text(
+        self,
+        text: str
+    ) -> str:
+        """
+        Normalizes betting slip text using LLM.
+        
+        Args:
+            text: Raw betting slip text
+            
+        Returns:
+            Normalized text with corrected player names
         """
 ```
 
 ## Data Structures
 
-### Context Dictionary
+### Bet Dictionary
 ```python
-context = {
-    'sport': str,              # Sport identifier
-    'market_type': str,        # Type of bet
-    'player': str,             # Optional: Player name for props
-    'team': str,              # Optional: Team name
-    'line': float,            # Betting line
-    'odds': Dict[str, Any],   # Current odds
-    'stats': Dict[str, Any],  # Historical statistics
-    'weather': Dict[str, Any]  # Optional: Weather data
+bet = {
+    'player': str,            # Player name
+    'team': str,             # Team name
+    'bet_type': str,         # Type of bet
+    'line': float,           # Betting line
+    'odds': int,             # American odds
+    'is_complete': bool      # Whether all required info is present
 }
 ```
 
 ### Analysis Result
 ```python
 analysis = {
-    'recommendation': str,     # 'Pass', 'Consider', 'Strong Consider'
-    'confidence': float,       # 0.0 to 1.0
-    'expected_value': float,   # Adjusted EV
-    'raw_ev': float,          # Raw EV before adjustments
-    'risk_assessment': Dict,   # Risk factors and level
-    'key_factors': List[str], # Important considerations
-    'timestamp': str          # ISO format timestamp
+    'bets': List[Dict],      # List of analyzed bets
+    'overall_analysis': {
+        'complete_legs': int,    # Number of complete bets
+        'risk_level': str,       # Risk assessment
+        'recommendations': List   # List of recommendations
+    },
+    'timestamp': str         # ISO format timestamp
 }
 ```
 
 ## Implementation Details
 
-### Correlation Detection
+### Text Normalization
 
-1. **Same-Day Games**
-```python
-independence_score *= 0.9  # 10% correlation penalty
-```
+The system uses LLM to:
+1. Correct OCR errors in player names
+2. Standardize team names
+3. Format bet types consistently
+4. Extract numerical values accurately
 
-2. **Market Relationships**
-```python
-independence_score *= 0.8  # 20% correlation penalty
-```
+### Bet Validation
 
-3. **External Factors**
-```python
-independence_score *= 0.95  # 5% correlation penalty
-```
+Bets are considered valid when:
+1. Player and team are confidently identified
+2. Bet type is recognized
+3. Line value is present and valid
+4. Odds are specified and valid
 
 ### Risk Assessment
 
 Risk scores are calculated based on:
-- Number of risk factors (each worth 1 point)
-- Severity of factors (high impact = 2 points)
-- Correlation penalties
-- Line movement significance
-
-Final risk levels:
-- Low: 0-1 points
-- Medium: 2-3 points
-- High: 4+ points
+- Confidence in player identification
+- Completeness of bet information
+- Historical performance data
+- Statistical variance
 
 ## Error Handling
 
-1. **API Failures**
-   - Retry with exponential backoff
-   - Cache fallback for non-critical data
-   - Default to conservative estimates
+1. **Incomplete Bets**
+   - Skip bets missing critical information
+   - Log skipped bets for review
+   - Continue with complete bets
 
-2. **Missing Data**
-   - Use historical averages
-   - Increase risk assessment
-   - Lower confidence scores
+2. **Player Identification**
+   - Use confidence thresholds
+   - Skip uncertain matches
+   - Provide feedback on ambiguous names
 
 3. **Invalid Input**
    - Return descriptive error messages
@@ -189,34 +153,34 @@ Final risk levels:
 
 ## Performance Considerations
 
-1. **Caching**
-   - Odds: 5 minutes TTL
-   - Stats: 1 hour TTL
-   - Weather: 1 hour TTL
+1. **LLM Optimization**
+   - Batch processing when possible
+   - Reuse normalized text
+   - Cache common responses
 
 2. **Async Operations**
-   - Parallel API requests
+   - Parallel bet processing
    - Non-blocking analysis
-   - Concurrent agent processing
+   - Concurrent data retrieval
 
 3. **Memory Management**
-   - Regular cache cleanup
-   - Limit analysis history
+   - Efficient text processing
    - Optimize data structures
+   - Clean processing pipeline
 
 ## Future Enhancements
 
-1. **Additional Sports**
-   - MLB Agent
-   - NHL Agent
-   - Soccer Agent
+1. **Enhanced Analysis**
+   - Multi-sport correlation detection
+   - Advanced statistical models
+   - Historical trend analysis
 
-2. **Advanced Analysis**
-   - Machine learning models
-   - Time series analysis
-   - Regression testing
+2. **Improved Accuracy**
+   - Enhanced player recognition
+   - Better OCR correction
+   - More bet types support
 
 3. **Performance Optimization**
-   - Distributed processing
-   - Enhanced caching
-   - Query optimization 
+   - Smarter caching
+   - Batch processing
+   - Response optimization 

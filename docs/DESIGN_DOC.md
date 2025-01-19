@@ -1,261 +1,196 @@
 # Sports Betting AI Assistant Technical Design Document
 
 ## System Overview
-A sophisticated AI-powered sports betting assistant that leverages Telegram for user interaction and TheSportsDB API for comprehensive sports data. The system provides betting recommendations, sports analytics, and real-time information through an intuitive chat interface, with advanced parlay analysis and AI-driven decision making.
+An AI-powered sports betting analysis system that leverages advanced LLM technology to analyze betting slips, identify players and teams, and provide detailed recommendations. The system focuses on accurate bet extraction, validation, and statistical analysis.
 
-## Parlay Analysis System
+## Bet Analysis System
 
-### Parlay Input Processing
-1. **Text Recognition**
-   - Parse copied parlay text from various betting platforms
-   - Extract individual bets, odds, and conditions
-   - Support multiple parlay formats (FanDuel, DraftKings, BetMGM, etc.)
+### Text Processing
+1. **OCR Text Normalization**
+   - Clean and normalize OCR output
+   - Correct player name errors
+   - Standardize formatting
+   - Extract numerical values
 
-2. **Data Extraction**
-   - Team names and matchups
-   - Bet types (moneyline, spread, over/under, props)
-   - Odds for each selection
-   - Game dates and times
-   - Stake amounts
-   - Potential payout
+2. **LLM-Based Extraction**
+   - Player identification
+   - Team recognition
+   - Bet type classification
+   - Line and odds extraction
+   - Confidence scoring
 
-### AI Decision Engine
+### Analysis Engine
 
-1. **Historical Analysis**
-   - Team performance history
-   - Head-to-head records
-   - Performance under similar conditions
-   - League position and form
-   - Home/Away performance metrics
+1. **Bet Validation**
+   - Completeness checks
+   - Information verification
+   - Confidence thresholds
+   - Skip incomplete bets
+   - Error reporting
 
-2. **Statistical Models**
-   - Win probability calculations
-   - Score predictions
-   - Prop bet success rates
-   - Parlay correlation analysis
-   - Risk assessment algorithms
+2. **Statistical Analysis**
+   - Historical performance
+   - Player statistics
+   - Team data
+   - Risk assessment
+   - Value identification
 
-3. **Machine Learning Components**
-   - Feature Engineering
-     - Team statistics
-     - Player performance metrics
-     - Historical betting outcomes
-     - Weather conditions
-     - Injury reports
-     - Travel distance
-     - Rest days
+3. **LLM Components**
+   - Text Processing
+     - OCR correction
+     - Name normalization
+     - Team standardization
+     - Bet type recognition
+     - Format standardization
 
-   - Model Types
-     - Gradient Boosting for win predictions
-     - Neural Networks for score predictions
-     - Random Forests for prop bets
-     - Ensemble methods for final decisions
+   - Analysis Features
+     - Player identification
+     - Team recognition
+     - Bet classification
+     - Validation rules
+     - Confidence scoring
 
 4. **Risk Analysis**
-   - Individual bet risk assessment
-   - Parlay correlation factors
-   - Stake size recommendations
-   - Expected value calculations
-   - Variance analysis
-   - Bankroll management advice
+   - Confidence assessment
+   - Data completeness
+   - Historical variance
+   - Statistical significance
+   - Recommendation generation
 
-### Recommendation System
+### Analysis Output
 
 1. **Bet Analysis**
-   - Individual bet strength rating (1-10)
-   - Correlation between parlay legs
-   - Alternative bet suggestions
-   - Risk level assessment
-   - Value bet identification
+   - Player and team identification
+   - Bet type classification
+   - Line and odds validation
+   - Risk assessment
+   - Statistical analysis
 
 2. **Output Format**
-   ```
-   📊 Parlay Analysis
-   
-   Overall Rating: 7/10
-   Risk Level: Medium
-   Expected Value: +2.3%
-   
-   Individual Legs:
-   1. Team A ML (-150) - Strength: 8/10
-      ✅ Strong recent form
-      ✅ Favorable H2H record
-      ⚠️ Key player injured
-   
-   2. Team B +3.5 (-110) - Strength: 6/10
-      ✅ Good ATS record
-      ⚠️ Tough away game
-      ℹ️ Weather could be a factor
-   
-   Recommendations:
-   ✓ Proceed with caution
-   ✓ Consider splitting into single bets
-   ✓ Alternative: Team A -1.5 has better value
+   ```json
+   {
+     "bets": [
+       {
+         "player": "Jalen Hurts",
+         "team": "Philadelphia Eagles",
+         "bet_type": "passing_yards",
+         "line": 250.5,
+         "odds": -110,
+         "analysis": {
+           "confidence": "high",
+           "historical_avg": 245.3,
+           "recommendation": "consider"
+         }
+       }
+     ],
+     "overall_analysis": {
+       "complete_legs": 3,
+       "risk_level": "medium",
+       "recommendations": []
+     }
+   }
    ```
 
-3. **Alternative Suggestions**
-   - Better value bets
-   - Risk reduction options
-   - Hedge opportunities
-   - Alternative parlay combinations
+3. **Analysis Components**
+   - Player confidence scores
+   - Data completeness checks
+   - Statistical insights
+   - Risk assessment
+   - Recommendations
 
 ## Architecture Design
 
-### High-Level Components
-1. **Frontend Layer**
-   - Telegram Bot Interface
-   - Command Parser
-   - Response Formatter
-   - User Session Manager
+### Core Components
+1. **Bet Analyzer**
+   - Text normalization
+   - LLM integration
+   - Bet extraction
+   - Validation logic
+   - Analysis engine
 
-2. **Application Layer**
-   - Request Handler
-   - Authentication Service
-   - Betting Analysis Engine
-   - Prediction Service
-   - Data Aggregator
-   - Cache Manager
+2. **LLM Service**
+   - DeepSeek API client
+   - Prompt management
+   - Response processing
+   - Error handling
+   - Confidence scoring
 
-3. **Data Layer**
-   - PostgreSQL Database
-   - Redis Cache
-   - External API Integrator
-   - Data Backup Service
+3. **Data Service**
+   - Sports statistics
+   - Player data
+   - Team information
+   - Historical performance
+   - Analysis tools
 
-4. **AI/ML Layer**
-   - Model Training Pipeline
-   - Inference Engine
-   - Feature Engineering
-   - Model Registry
-   - Performance Monitor
+### Data Structures
 
-### Database Schema
+```python
+# Bet Structure
+class Bet:
+    player: str
+    team: str
+    bet_type: str
+    line: float
+    odds: int
+    is_complete: bool
+    confidence: float
+    analysis: Dict[str, Any]
 
-```sql
--- Users Table
-CREATE TABLE users (
-    user_id BIGINT PRIMARY KEY,
-    telegram_id BIGINT UNIQUE,
-    username VARCHAR(255),
-    preferences JSONB,
-    created_at TIMESTAMP,
-    last_active TIMESTAMP
-);
+# Analysis Result
+class AnalysisResult:
+    bets: List[Bet]
+    complete_legs: int
+    risk_level: str
+    recommendations: List[str]
+    timestamp: datetime
 
--- Teams Table
-CREATE TABLE teams (
-    team_id VARCHAR(50) PRIMARY KEY,
-    name VARCHAR(255),
-    league VARCHAR(100),
-    statistics JSONB,
-    last_updated TIMESTAMP
-);
-
--- Matches Table
-CREATE TABLE matches (
-    match_id VARCHAR(50) PRIMARY KEY,
-    home_team_id VARCHAR(50),
-    away_team_id VARCHAR(50),
-    match_date TIMESTAMP,
-    odds JSONB,
-    status VARCHAR(50),
-    result JSONB,
-    FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
-    FOREIGN KEY (away_team_id) REFERENCES teams(team_id)
-);
-
--- Predictions Table
-CREATE TABLE predictions (
-    prediction_id SERIAL PRIMARY KEY,
-    match_id VARCHAR(50),
-    prediction JSONB,
-    confidence FLOAT,
-    created_at TIMESTAMP,
-    accuracy FLOAT,
-    FOREIGN KEY (match_id) REFERENCES matches(match_id)
-);
-
--- Betting History Table
-CREATE TABLE betting_history (
-    bet_id SERIAL PRIMARY KEY,
-    user_id BIGINT,
-    match_id VARCHAR(50),
-    amount DECIMAL,
-    odds DECIMAL,
-    result VARCHAR(50),
-    profit_loss DECIMAL,
-    bet_date TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id),
-    FOREIGN KEY (match_id) REFERENCES matches(match_id)
-);
-
--- Parlays Table
-CREATE TABLE parlays (
-    parlay_id SERIAL PRIMARY KEY,
-    user_id BIGINT,
-    legs JSONB,
-    total_odds DECIMAL,
-    stake DECIMAL,
-    potential_payout DECIMAL,
-    status VARCHAR(50),
-    created_at TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
-
--- Parlay Analysis Table
-CREATE TABLE parlay_analysis (
-    analysis_id SERIAL PRIMARY KEY,
-    parlay_id BIGINT,
-    analysis_data JSONB,
-    recommendations JSONB,
-    risk_score FLOAT,
-    expected_value FLOAT,
-    created_at TIMESTAMP,
-    FOREIGN KEY (parlay_id) REFERENCES parlays(parlay_id)
-);
+# LLM Response
+class LLMResponse:
+    text: str
+    confidence: float
+    entities: Dict[str, Any]
+    error: Optional[str]
 ```
 
 ## Technical Specifications
 
 ### API Integration
-1. **TheSportsDB API**
-   - Rate Limit: 100 requests/minute
+1. **DeepSeek API**
    - Authentication: API key
    - Response Format: JSON
-   - Endpoint Base URL: https://www.thesportsdb.com/api/v1/json/
+   - Error Handling: Retry with backoff
+   - Timeout: 30 seconds
 
-2. **Telegram Bot API**
-   - Webhook Implementation
-   - Long Polling Fallback
-   - Update Interval: 1 second
-   - Max Message Size: 4096 characters
+2. **Sports Data API**
+   - Player Statistics
+   - Team Information
+   - Historical Data
+   - Performance Metrics
 
-### Caching Strategy
-1. **Redis Configuration**
-   - Match Data: 5 minutes TTL
-   - Team Stats: 1 hour TTL
-   - User Sessions: 24 hours TTL
-   - API Responses: 15 minutes TTL
+### Performance Optimization
+1. **LLM Processing**
+   - Batch processing
+   - Response caching
+   - Error recovery
+   - Resource management
 
-2. **Cache Invalidation Rules**
-   - On Match Update
-   - On Odds Change
-   - On User Preference Update
+2. **Data Management**
+   - Efficient processing
+   - Smart caching
+   - Response optimization
+   - Error handling
 
 ## System Requirements
 
 ### Hardware Requirements
-- CPU: 4+ cores
-- RAM: 16GB minimum
-- Storage: 100GB SSD
-- Network: 100Mbps dedicated
+- CPU: 2+ cores
+- RAM: 8GB minimum
+- Storage: 50GB SSD
 
 ### Software Requirements
-- Python 3.9+
-- PostgreSQL 13+
-- Redis 6+
-- Docker 20+
-- Nginx 1.18+
+- Python 3.8+
+- DeepSeek API key
+- Sports Data API key
 
 ## Deployment Architecture
 

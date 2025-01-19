@@ -2,6 +2,121 @@
 
 ## Core Features
 
+### 1. Intelligent Bet Analysis
+#### Bet Extraction
+- Dynamic player identification
+- Team recognition
+- Bet type classification
+- Line and odds extraction
+- OCR error correction
+- Validation checks
+
+#### Player Recognition
+- LLM-based name identification
+- Team association
+- Confidence scoring
+- Ambiguity resolution
+- OCR error correction
+- Name standardization
+
+#### Bet Validation
+- Completeness checks
+- Information verification
+- Confidence thresholds
+- Skip incomplete bets
+- Error reporting
+- Quality assurance
+
+### 2. Statistical Analysis
+#### Performance Analysis
+- Historical statistics
+- Player performance data
+- Team statistics
+- Trend analysis
+- Risk assessment
+- Value identification
+
+#### Risk Assessment
+- Confidence scoring
+- Data completeness
+- Historical variance
+- Statistical significance
+- Risk level classification
+- Recommendation generation
+
+### 3. LLM Integration
+#### Text Processing
+- OCR correction
+- Name normalization
+- Team standardization
+- Bet type recognition
+- Format standardization
+- Context understanding
+
+#### Analysis Features
+- Player identification
+- Team recognition
+- Bet classification
+- Validation rules
+- Confidence scoring
+- Error detection
+
+### 4. Data Integration
+#### Sports Data
+- Player statistics
+- Team information
+- Historical performance
+- League data
+- Match information
+- Performance metrics
+
+#### Analysis Tools
+- Statistical analysis
+- Performance tracking
+- Risk assessment
+- Value identification
+- Trend analysis
+- Pattern recognition
+
+## Advanced Features
+### 1. Intelligent Processing
+- Smart bet extraction
+- Dynamic player recognition
+- Automated validation
+- Risk assessment
+- Statistical analysis
+- Performance tracking
+
+### 2. Error Handling
+- OCR correction
+- Validation checks
+- Error reporting
+- Quality assurance
+- Data verification
+- Confidence thresholds
+
+### 3. Performance Optimization
+- Efficient processing
+- Smart caching
+- Batch analysis
+- Response optimization
+- Resource management
+- Error recovery
+
+## Future Roadmap Features
+1. Enhanced player recognition
+2. More bet types support
+3. Advanced statistical models
+4. Multi-sport correlation
+5. Improved OCR correction
+6. Enhanced validation
+7. Performance optimization
+8. Batch processing
+9. Response caching
+10. Error handling improvements
+
+## Core Features
+
 ### 1. Sports Information System
 #### Team Analytics
 - Comprehensive team statistics
