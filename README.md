@@ -1,3 +1,5 @@
+![image](https://github.com/user-attachments/assets/0b8d0aef-f8ed-4dfe-9331-f826ba5b3f96)
+
 # Sports Betting Analysis System
 
 An AI-powered sports betting analysis system that uses advanced LLM technology to analyze betting slips and provide detailed recommendations for player props and parlays. Access the system through a convenient Telegram bot interface.
