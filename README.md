@@ -1,6 +1,6 @@
 # Sports Betting Analysis System
 
-An AI-powered sports betting analysis system that uses advanced LLM technology to analyze betting slips and provide detailed recommendations for player props and parlays.
+An AI-powered sports betting analysis system that uses advanced LLM technology to analyze betting slips and provide detailed recommendations for player props and parlays. Access the system through a convenient Telegram bot interface.
 
 ## Features
 
@@ -9,6 +9,14 @@ An AI-powered sports betting analysis system that uses advanced LLM technology t
 - Automated bet extraction from betting slips
 - Smart validation of bet completeness
 - Risk assessment and analysis
+
+### Telegram Integration
+- Easy-to-use bot interface
+- Upload betting slip screenshots
+- Receive instant analysis
+- Interactive commands
+- Real-time notifications
+- User-friendly responses
 
 ### LLM Integration
 - DeepSeek AI for bet analysis
@@ -35,6 +43,7 @@ An AI-powered sports betting analysis system that uses advanced LLM technology t
 # .env.example - DO NOT add actual keys here
 DEEPSEEK_API_KEY=your_deepseek_api_key
 SPORTS_DATA_API_KEY=your_sports_data_api_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 ```
 
 ### Best Practices
@@ -61,6 +70,7 @@ SPORTS_DATA_API_KEY=your_sports_data_api_key
 - API keys for:
   - DeepSeek API
   - Sports Data API
+  - Telegram Bot Token (get from @BotFather)
 
 ### Installation
 ```bash
@@ -86,6 +96,7 @@ Create a `.env` file with the following:
 ```
 DEEPSEEK_API_KEY=your_deepseek_api_key
 SPORTS_DATA_API_KEY=your_sports_data_api_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
 
 # Tesseract Configuration
 TESSERACT_PATH=/usr/bin/tesseract  # Linux/Mac
@@ -106,7 +117,24 @@ TESSERACT_PATH=/usr/bin/tesseract  # Linux/Mac
 
 ## Usage
 
-### Bet Analysis
+### Telegram Bot
+1. Start the bot:
+   ```bash
+   python run.py
+   ```
+2. Find the bot on Telegram using the username provided by @BotFather
+3. Start a conversation with `/start`
+4. Upload a betting slip screenshot or paste the text
+5. Receive detailed analysis and recommendations
+
+### Available Commands
+- `/start` - Begin interaction with the bot
+- `/help` - Show available commands
+- `/analyze` - Analyze a betting slip (with image or text)
+- `/settings` - Configure your preferences
+- `/status` - Check system status
+
+### Python API
 ```python
 from src.services.bet_analyzer import BetAnalyzer
 
