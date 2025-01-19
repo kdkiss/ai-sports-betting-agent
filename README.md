@@ -22,10 +22,42 @@ An AI-powered sports betting analysis system that uses advanced LLM technology t
 - Historical performance analysis
 - Statistical validation
 
+## Security
+
+### API Keys and Secrets
+- Never commit API keys or secrets to version control
+- Use environment variables for all sensitive data
+- Keep `.env` file in your local environment only
+- Use `.env.example` as a template (with placeholder values)
+
+### Environment Variables
+```bash
+# .env.example - DO NOT add actual keys here
+DEEPSEEK_API_KEY=your_deepseek_api_key
+SPORTS_DATA_API_KEY=your_sports_data_api_key
+```
+
+### Best Practices
+- Regularly rotate API keys
+- Use strong, unique keys for each environment
+- Monitor API usage for unauthorized access
+- Implement rate limiting
+- Keep dependencies updated
+
+### Data Protection
+- No sensitive data is stored locally
+- All API communications use HTTPS
+- Implement proper error handling to avoid data leaks
+- Log files exclude sensitive information
+
 ## Setup
 
 ### Prerequisites
 - Python 3.8+
+- Tesseract OCR:
+  - Windows: [Tesseract Installer](https://github.com/UB-Mannheim/tesseract/wiki)
+  - Linux: `sudo apt-get install tesseract-ocr`
+  - Mac: `brew install tesseract`
 - API keys for:
   - DeepSeek API
   - Sports Data API
@@ -46,7 +78,7 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env with your API keys
+# Edit .env with your API keys and Tesseract path
 ```
 
 ### Configuration
@@ -54,7 +86,23 @@ Create a `.env` file with the following:
 ```
 DEEPSEEK_API_KEY=your_deepseek_api_key
 SPORTS_DATA_API_KEY=your_sports_data_api_key
+
+# Tesseract Configuration
+TESSERACT_PATH=/usr/bin/tesseract  # Linux/Mac
+# TESSERACT_PATH=C:\Program Files\Tesseract-OCR\tesseract.exe  # Windows
 ```
+
+### Tesseract Setup
+1. Install Tesseract OCR using the instructions above for your OS
+2. Verify installation:
+   ```bash
+   tesseract --version
+   ```
+3. Update the `TESSERACT_PATH` in your `.env` file to point to your Tesseract executable
+4. For Windows users:
+   - Add Tesseract installation directory to system PATH
+   - Default path is usually `C:\Program Files\Tesseract-OCR`
+   - Restart your terminal after installation
 
 ## Usage
 

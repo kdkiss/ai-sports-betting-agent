@@ -1,9 +1,15 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -22,20 +28,41 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
 ENV/
-.env
-.venv
-.env.*
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
-*.sublime-workspace
-*.sublime-project
+
+# Logs
+*.log
+logs/
+log/
+
+# Local development
+*.db
+*.sqlite3
+
+# API keys and secrets
+*_key.txt
+*_secret.txt
+credentials.json
+secrets.yaml
+config.yaml
+!example.config.yaml
+
+# Cache
+.cache/
+.pytest_cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
 
 # Project specific
 .env
@@ -45,16 +72,6 @@ logs/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
-
-# Cache
-.cache/
-.pytest_cache/
-*.pyc
-
-# Local development
-local_settings.py
-db.sqlite3
-*.db
 
 # Temporary files
 *.bak
