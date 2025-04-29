@@ -12,6 +12,10 @@ class Config:
     DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 
+    # D:\ai-sports-betting-agent\sports-ai\src\config.py
+    SPORTSDB_API_KEY = "3"  # Get from TheSportsDB
+    SPORTSDB_BASE_URL = 'https://www.thesportsdb.com/api'
+
     # LLM Settings
     DEEPSEEK_MODEL: str = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
     DEEPSEEK_TEMPERATURE: float = float(os.getenv("DEEPSEEK_TEMPERATURE", "0.7"))

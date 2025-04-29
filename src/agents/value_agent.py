@@ -1,97 +1,100 @@
 from typing import Dict, Any
 from .base_agent import BaseAgent
+import json
+import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ValueBettingAgent(BaseAgent):
-    """Agent responsible for identifying value betting opportunities."""
+    """Agent responsible for analyzing value betting opportunities."""
 
     def __init__(self, llm):
         """Initialize the agent with LLM service."""
         super().__init__(llm=llm)
 
     async def analyze(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze betting odds for value opportunities."""
-        response = await self._get_llm_analysis(context)
-        return self._parse_response(response)
+        """Analyze a value betting opportunity."""
+        try:
+            response = await self._get_llm_analysis(context)
+            parsed_response = self._parse_response(response)
+            return parsed_response
+        except Exception as e:
+            logger.error(f"Error in value analysis: {e}", exc_info=True)
+            return {
+                "error": f"Failed to analyze value bet: {str(e)}",
+                "value_rating": {"score": 0, "edge": "0%", "confidence": 0},
+                "market_analysis": {"true_probability": 0, "implied_probability": 0, "edge": 0, "market_efficiency": "Unknown"},
+                "betting_advice": {"recommended_size": "N/A", "timing": "N/A", "max_price": "N/A", "stop_loss": "N/A"},
+                "supporting_factors": [],
+                "risk_factors": [],
+                "action_items": []
+            }
 
     def _create_prompt(self, context: Dict[str, Any]) -> str:
-        """Create a detailed prompt for value betting analysis."""
-        return f"""Analyze this betting opportunity for value with the following context:
+        """Create a prompt for value betting analysis."""
+        text = context.get('text', '')
+        team1 = context.get('team1', {}).get('name', 'Unknown Team 1')
+        team2 = context.get('team2', {}).get('name', 'Unknown Team 2')
+        matchup_context = context.get('matchup_context', {})
 
-Match Details:
-- Teams: {context['team1']} vs {context['team2']}
-- Market: {context['market_type']}
-- Current Odds: {context['current_odds']}
-- Line: {context.get('line', 'N/A')}
+        return f"""You are an expert sports betting analyst. Analyze the value betting opportunity and return the response in valid JSON format, enclosed in ```json\n...\n```. Do not include any additional text outside the JSON block. The JSON must follow this structure:
 
-Model Predictions:
-- Win Probability: {context['predicted_probability']}%
-- Predicted Score: {context.get('predicted_score', 'N/A')}
-- Confidence Level: {context['confidence']}/10
+```json
+{{
+  "value_rating": {{
+    "score": 7,
+    "edge": "10%",
+    "confidence": 7
+  }},
+  "market_analysis": {{
+    "true_probability": 50,
+    "implied_probability": 45,
+    "edge": 5,
+    "market_efficiency": "Low"
+  }},
+  "betting_advice": {{
+    "recommended_size": "$100",
+    "timing": "Now",
+    "max_price": "2.00",
+    "stop_loss": "1.80"
+  }},
+  "supporting_factors": ["Factor 1"],
+  "risk_factors": ["Risk 1"],
+  "action_items": ["Action 1"]
+}}
+```
 
-Market Analysis:
-- Opening Odds: {context.get('opening_odds', 'N/A')}
-- Line Movement: {context.get('line_movement', 'N/A')}
-- Market Percentage: {context.get('market_percentage', 'N/A')}
-- Sharp Money Indicators: {context.get('sharp_money', 'N/A')}
+Betting Details:
+- Teams: {team1} vs {team2}
+- Text: {text}
+- Matchup Context: {matchup_context}
 
-Historical Data:
-- H2H Results: {context.get('h2h_results', 'N/A')}
-- Similar Situations: {context.get('similar_situations', 'N/A')}
-- Betting Trends: {context.get('betting_trends', 'N/A')}
+Consider:
+1. Implied probabilities
+2. Market inefficiencies
+3. Risk-reward balance
+4. Team performance
 
-Analyze this opportunity considering:
-1. True probability vs. implied probability
-2. Market efficiency and line movement
-3. Sharp money influence
-4. Historical betting trends
-5. Situational factors
-6. Risk-reward ratio
-
-Provide a comprehensive value analysis including:
-1. Value rating (1-10)
-2. Edge calculation
-3. Recommended bet size
-4. Key factors supporting the value
-5. Potential risks
-6. Market timing advice
-"""
+Return only the JSON response in the specified format, enclosed in ```json\n...\n```."""
 
     def _parse_response(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response into structured value analysis."""
-        # This is a placeholder implementation
-        return {
-            'value_rating': {
-                'score': 8,
-                'edge': '+5.2%',
-                'confidence': 'High'
-            },
-            'market_analysis': {
-                'implied_probability': 45.5,
-                'true_probability': 52.3,
-                'edge': 6.8,
-                'market_efficiency': 'Inefficient - Value Present'
-            },
-            'betting_advice': {
-                'recommended_size': '3 units',
-                'timing': 'Bet now - line moving against us',
-                'max_price': '-110',
-                'stop_loss': '-120'
-            },
-            'supporting_factors': [
-                'Sharp money aligned',
-                'Positive line movement',
-                'Strong situational spot',
-                'Historical success in similar spots'
-            ],
-            'risk_factors': [
-                'High market volatility',
-                'Weather concerns',
-                'Key player questionable'
-            ],
-            'action_items': [
-                'Monitor line movement',
-                'Set price alerts',
-                'Watch for injury news',
-                'Consider alternative markets'
-            ]
-        } 
+        logger.debug(f"Raw LLM response: {response}")
+        try:
+            json_match = re.search(r'```json\n([\s\S]*?)\n```', response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1)
+                return json.loads(json_str)
+            return json.loads(response)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing failed: {e}", exc_info=True)
+            return {
+                "error": "Failed to parse LLM response as JSON",
+                "value_rating": {"score": 0, "edge": "0%", "confidence": 0},
+                "market_analysis": {"true_probability": 0, "implied_probability": 0, "edge": 0, "market_efficiency": "Unknown"},
+                "betting_advice": {"recommended_size": "N/A", "timing": "N/A", "max_price": "N/A", "stop_loss": "N/A"},
+                "supporting_factors": [],
+                "risk_factors": [],
+                "action_items": []
+            }

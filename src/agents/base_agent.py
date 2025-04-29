@@ -1,19 +1,20 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
-from ..data.sports_data_client import SportsDataClient
+from ..clients.sports_data_client import SportsDataClient
 from ..data.odds_client import OddsClient
 from ..data.weather_client import WeatherClient
+from langchain.prompts import PromptTemplate
+from langchain_core.runnables import RunnableSequence
 
 class BaseAgent(ABC):
     """Base class for all sport-specific betting agents."""
     
-    def __init__(self, llm=None):
-        """Initialize the agent with optional LLM service."""
-        # Initialize data clients
-        self.sports_data = SportsDataClient()
-        self.odds_data = OddsClient()
-        self.weather_data = WeatherClient()
+    def __init__(self, llm=None, sports_data_client=None, odds_client=None, weather_client=None):
+        """Initialize the agent with optional LLM service and data clients."""
         self.llm = llm
+        self.sports_data = sports_data_client
+        self.odds_data = odds_client
+        self.weather_data = weather_client
         
     @abstractmethod
     async def analyze(self, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -28,15 +29,38 @@ class BaseAgent(ABC):
         """
         pass
     
+    async def _get_llm_analysis(self, context: Dict[str, Any]) -> str:
+        """Get analysis from the LLM."""
+        if not self.llm:
+            raise ValueError("LLM not initialized")
+        
+        prompt_text = self._create_prompt(context)
+        prompt = PromptTemplate(input_variables=["context"], template="{context}")
+        chain = prompt | self.llm
+        response = await chain.ainvoke({"context": prompt_text})
+        return response.content
+    
+    @abstractmethod
+    def _create_prompt(self, context: Dict[str, Any]) -> str:
+        """Create a prompt for LLM analysis."""
+        pass
+    
+    @abstractmethod
+    def _parse_response(self, response: str) -> Dict[str, Any]:
+        """Parse the LLM response into structured data."""
+        pass
+    
     async def _get_data(self, sport: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """Gather all necessary data for analysis."""
-        data = {
-            'odds': await self.odds_data.get_odds(sport, context),
-            'stats': await self.sports_data.get_stats(sport, context)
-        }
+        data = {}
         
-        # Add weather data for outdoor sports
-        if sport in ['NFL', 'MLB']:
+        if self.odds_data:
+            data['odds'] = await self.odds_data.get_odds(sport, context)
+        if self.sports_data:
+            data['stats'] = await self.sports_data.get_stats(sport, context)
+        
+        # Add weather data for outdoor sports if weather client is available
+        if self.weather_data and sport in ['NFL', 'MLB']:
             data['weather'] = await self.weather_data.get_forecast(context)
             
         return data
@@ -93,4 +117,4 @@ class BaseAgent(ABC):
             'key_factors': analysis.get('key_factors', []),
             'data_points': analysis.get('data_points', {}),
             'timestamp': analysis.get('timestamp', None)
-        } 
+        }
