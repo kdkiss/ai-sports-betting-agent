@@ -24,7 +24,7 @@ class TelegramBot:
 
     def __init__(self, token: str, agents: dict):
         """Initialize the bot with a token and agent instances."""
-        print("\n=== Bot Initializing ===")  # Basic print to verify logging works
+        print("\n=== Bot Initializing ===")
         
         self.token = token
         self.parlay_agent = agents['parlay']
@@ -33,17 +33,13 @@ class TelegramBot:
         self.bankroll_agent = agents['bankroll']
         self.application = None
         
-        # Configure logging to show in terminal
+        # Configure logging
         logging.basicConfig(
-            level=logging.INFO,  # Changed from DEBUG to INFO for cleaner output
+            level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.StreamHandler()  # This ensures logs go to terminal
-            ]
+            handlers=[logging.StreamHandler()]
         )
         
-        # Log bot initialization
-        print("\n=== Bot Initializing ===")
         print("Configuring message handlers...")
         
         # Verify Tesseract installation
@@ -71,7 +67,6 @@ class TelegramBot:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Send a message when the command /start is issued."""
-        print("\nReceived /start command")  # Basic command logging
         print("\n" + "="*50)
         print("🚀 START COMMAND RECEIVED")
         print(f"From: {update.message.from_user.username}")
@@ -131,16 +126,13 @@ You can also use commands:
 
     def _split_parlays(self, text: str) -> List[str]:
         """Split text into individual parlays based on common patterns."""
-        # First try splitting by double newlines (blank lines)
         parlays = [p.strip() for p in text.split('\n\n') if p.strip()]
         
         if len(parlays) == 1:
-            # If no blank lines, try splitting by "Parlay" or "Ticket" headers
             import re
             parlays = [p.strip() for p in re.split(r'(?i)(?:^|\n)(?:parlay|ticket)\s*(?:\d+|\w+)?:', text) if p.strip()]
             
         if len(parlays) == 1:
-            # If still no splits, treat as one parlay
             return [text]
             
         return parlays
@@ -182,14 +174,12 @@ You can also use commands:
         try:
             text = update.message.text
             
-            # Check if text contains multiple parlays
             if any(word in text.lower() for word in ['parlay', 'ticket', 'slip']) and len(text.split('\n')) > 2:
                 parlays = self._split_parlays(text)
                 if len(parlays) > 1:
                     await self._analyze_multiple_parlays(update, parlays)
                     return
 
-            # Regular message handling
             if any(word in text.lower() for word in ['parlay', 'ticket', 'slip', 'multi']):
                 analysis = await self.parlay_agent.analyze({'text': text})
                 await self._format_parlay_response(update, analysis)
@@ -218,22 +208,15 @@ You can also use commands:
     async def _analyze_multiple_parlays(self, update: Update, parlays: List[str]):
         """Analyze multiple parlays and provide comparative analysis."""
         try:
-            # Analyze each parlay
             analyses = []
             for i, parlay in enumerate(parlays, 1):
                 analysis = await self.parlay_agent.analyze({'text': parlay})
                 analyses.append(analysis)
 
-            # Calculate correlation scores between parlays
             correlations = self._calculate_parlay_correlations(analyses)
-            
-            # Calculate risk-adjusted metrics
             risk_metrics = self._calculate_risk_metrics(analyses)
-            
-            # Get optimal portfolio allocation
             portfolio = self._calculate_portfolio_allocation(analyses, correlations, risk_metrics)
 
-            # Sort parlays by composite score (EV and risk-adjusted return)
             sorted_analyses = sorted(
                 enumerate(analyses, 1),
                 key=lambda x: (
@@ -243,14 +226,14 @@ You can also use commands:
                 reverse=True
             )
 
-            # Format comparative response
-            response = f"""📊 *Comparative Parlay Analysis*
+            response = """📊 *Comparative Parlay Analysis*
 
 *Rankings (EV & Risk-Adjusted):*
-{"".join([f"#{i}. Parlay {idx} ({analysis['overall_rating']['expected_value']} EV, {risk_metrics[idx-1]['sharpe_ratio']:.2f} Sharpe)\\n" for i, (idx, analysis) in enumerate(sorted_analyses, 1)])}
-
-*Detailed Analysis:*
 """
+            for i, (idx, analysis) in enumerate(sorted_analyses, 1):
+                response += f"#{i}. Parlay {idx} ({analysis['overall_rating']['expected_value']} EV, {risk_metrics[idx-1]['sharpe_ratio']:.2f} Sharpe)\n"
+
+            response += "\n*Detailed Analysis:*\n"
             for i, parlay_analysis in enumerate(analyses, 1):
                 response += f"""
 *Parlay {i}:*
@@ -263,36 +246,29 @@ You can also use commands:
 • Main Concern: {parlay_analysis['analysis']['concerns'][0]}
 """
 
-            # Add correlation analysis if multiple parlays
             if len(analyses) > 1:
-                response += """
-*Correlation Analysis:*
-"""
+                response += "\n*Correlation Analysis:*\n"
                 high_corr_pairs = [
                     (i, j) for i in range(len(analyses)) for j in range(i+1, len(analyses))
                     if correlations[i][j] > 0.5
                 ]
                 if high_corr_pairs:
-                    response += "⚠️ High correlation detected between:\\n"
+                    response += "⚠️ High correlation detected between:\n"
                     for i, j in high_corr_pairs:
-                        response += f"• Parlay {i+1} & Parlay {j+1} ({correlations[i][j]:.2%})\\n"
+                        response += f"• Parlay {i+1} & Parlay {j+1} ({correlations[i][j]:.2%})\n"
                 else:
-                    response += "✅ No concerning correlations between parlays\\n"
+                    response += "✅ No concerning correlations between parlays\n"
 
-            response += """
-*Portfolio Recommendation:*
-"""
-            # Add optimal portfolio allocation
-            response += "Optimal Allocation (Kelly-adjusted):\\n"
+            response += "\n*Portfolio Recommendation:*\n"
+            response += "Optimal Allocation (Kelly-adjusted):\n"
             for i, alloc in enumerate(portfolio['allocations'], 1):
                 if alloc > 0:
                     response += f"• Parlay {i}: {alloc:.1%} of bankroll"
                     if portfolio['hedges'].get(i):
-                        response += f" (Hedge: {portfolio['hedges'][i]})\\n"
+                        response += f" (Hedge: {portfolio['hedges'][i]})\n"
                     else:
-                        response += "\\n"
+                        response += "\n"
 
-            # Add risk metrics summary
             response += f"""
 *Portfolio Metrics:*
 • Expected Return: {portfolio['expected_return']:.1%}
@@ -301,19 +277,14 @@ You can also use commands:
 • Max Drawdown: {portfolio['max_drawdown']:.1%}
 """
 
-            # Add risk warnings and strategy recommendations
             if portfolio['warnings']:
-                response += """
-⚠️ *Risk Warnings:*
-"""
+                response += "\n⚠️ *Risk Warnings:*\n"
                 for warning in portfolio['warnings']:
-                    response += f"• {warning}\\n"
+                    response += f"• {warning}\n"
 
-            response += """
-*Strategy Recommendations:*
-"""
+            response += "\n*Strategy Recommendations:*\n"
             for rec in portfolio['recommendations']:
-                response += f"• {rec}\\n"
+                response += f"• {rec}\n"
 
             await update.message.reply_text(response, parse_mode='Markdown')
 
@@ -330,32 +301,19 @@ You can also use commands:
         
         for i in range(n):
             for j in range(i+1, n):
-                # Calculate correlation based on:
-                # 1. Same sports/leagues
-                # 2. Similar bet types
-                # 3. Related teams/players
-                # 4. Time overlap
-                # This is a simplified example - real implementation would be more sophisticated
                 correlation = 0.0
-                
-                # Check for same teams/players
                 teams_i = set(self._extract_teams(analyses[i]))
                 teams_j = set(self._extract_teams(analyses[j]))
                 if teams_i.intersection(teams_j):
                     correlation += 0.3
-                
-                # Check for same leagues
                 leagues_i = set(self._extract_leagues(analyses[i]))
                 leagues_j = set(self._extract_leagues(analyses[j]))
                 if leagues_i.intersection(leagues_j):
                     correlation += 0.2
-                
-                # Check for similar bet types
                 bet_types_i = set(self._extract_bet_types(analyses[i]))
                 bet_types_j = set(self._extract_bet_types(analyses[j]))
                 if bet_types_i.intersection(bet_types_j):
                     correlation += 0.1
-                
                 correlations[i][j] = correlations[j][i] = min(correlation, 1.0)
         
         return correlations
@@ -367,12 +325,8 @@ You can also use commands:
         for analysis in analyses:
             ev = float(analysis['overall_rating']['expected_value'].strip('%')) / 100
             confidence = float(analysis['overall_rating']['confidence']) / 10
-            
-            # Convert risk level to numeric value
             risk_map = {'Low': 0.5, 'Medium': 1.0, 'High': 2.0}
             risk = risk_map[analysis['overall_rating']['risk_level']]
-            
-            # Calculate metrics
             sharpe_ratio = (ev / risk) if risk > 0 else 0
             kelly_fraction = (ev * confidence) / risk if risk > 0 else 0
             
@@ -393,32 +347,24 @@ You can also use commands:
     ) -> dict:
         """Calculate optimal portfolio allocation using Kelly Criterion and MPT."""
         n = len(analyses)
-        
-        # Base allocations on Kelly criterion
         kelly_allocations = [max(0, m['kelly_fraction']) for m in risk_metrics]
         total_kelly = sum(kelly_allocations)
         
         if total_kelly > 0:
-            # Normalize allocations
             allocations = [k/total_kelly for k in kelly_allocations]
         else:
-            # Equal weight if no positive Kelly fractions
             allocations = [1/n] * n if n > 0 else []
 
-        # Adjust for correlations
         for i in range(n):
             for j in range(n):
                 if i != j and correlations[i][j] > 0.5:
-                    # Reduce allocation for highly correlated bets
                     allocations[i] *= (1 - correlations[i][j] * 0.5)
                     allocations[j] *= (1 - correlations[i][j] * 0.5)
 
-        # Normalize again
         total = sum(allocations)
         if total > 0:
             allocations = [a/total for a in allocations]
 
-        # Calculate portfolio metrics
         exp_return = sum(a * m['expected_value'] for a, m in zip(allocations, risk_metrics))
         portfolio_risk = sum(sum(
             allocations[i] * allocations[j] * correlations[i][j] * 
@@ -428,7 +374,6 @@ You can also use commands:
         
         sharpe = exp_return / portfolio_risk if portfolio_risk > 0 else 0
         
-        # Generate warnings and recommendations
         warnings = []
         if portfolio_risk > 0.2:
             warnings.append("High portfolio risk - consider reducing position sizes")
@@ -445,7 +390,6 @@ You can also use commands:
         if sharpe < 1:
             recommendations.append("Poor risk-adjusted return - consider alternative bets")
 
-        # Identify hedging opportunities
         hedges = {}
         for i in range(n):
             if risk_metrics[i]['risk_score'] > 1.5 and allocations[i] > 0.1:
@@ -456,7 +400,7 @@ You can also use commands:
             'expected_return': exp_return,
             'portfolio_risk': portfolio_risk,
             'sharpe_ratio': sharpe,
-            'max_drawdown': portfolio_risk * 2.33,  # 99th percentile estimate
+            'max_drawdown': portfolio_risk * 2.33,
             'warnings': warnings,
             'recommendations': recommendations,
             'hedges': hedges
@@ -464,39 +408,30 @@ You can also use commands:
 
     def _extract_teams(self, analysis: dict) -> List[str]:
         """Extract team names from analysis."""
-        # Placeholder - real implementation would parse from analysis
         return []
 
     def _extract_leagues(self, analysis: dict) -> List[str]:
         """Extract league names from analysis."""
-        # Placeholder - real implementation would parse from analysis
         return []
 
     def _extract_bet_types(self, analysis: dict) -> List[str]:
         """Extract bet types from analysis."""
-        # Placeholder - real implementation would parse from analysis
         return []
 
     async def _analyze_comprehensive(self, update: Update, text: str):
         """Perform a comprehensive analysis using multiple agents."""
         try:
-            # Get initial matchup analysis
             matchup_analysis = await self.matchup_agent.analyze({'text': text})
-            
-            # Use that to inform value analysis
             value_analysis = await self.value_agent.analyze({
                 'text': text,
                 'matchup_context': matchup_analysis
             })
-            
-            # Finally get bankroll advice
             bankroll_analysis = await self.bankroll_agent.analyze({
                 'text': text,
                 'matchup_context': matchup_analysis,
                 'value_context': value_analysis
             })
             
-            # Format comprehensive response
             response = f"""📊 *Comprehensive Betting Analysis*
 
 *Game Analysis:*
@@ -515,11 +450,14 @@ You can also use commands:
 • Position Size: {bankroll_analysis['bet_sizing']['recommended_units']} units
 
 *Action Items:*
-{"".join([f"• {item}\\n" for item in bankroll_analysis['action_items']])}
-
-*Key Risks:*
-{"".join([f"• {risk}\\n" for risk in value_analysis['risk_factors']])}
 """
+            for item in bankroll_analysis['action_items']:
+                response += f"• {item}\n"
+            
+            response += "\n*Key Risks:*\n"
+            for risk in value_analysis['risk_factors']:
+                response += f"• {risk}\n"
+            
             await update.message.reply_text(response, parse_mode='Markdown')
 
         except Exception as e:
@@ -537,16 +475,23 @@ You can also use commands:
 *Expected Value:* {analysis['overall_rating']['expected_value']}
 
 *Strengths:*
-{"".join([f"• {s}\\n" for s in analysis['analysis']['strengths']])}
-
-*Concerns:*
-{"".join([f"• {c}\\n" for c in analysis['analysis']['concerns']])}
-
+"""
+        for s in analysis['analysis']['strengths']:
+            response += f"• {s}\n"
+        
+        response += "\n*Concerns:*\n"
+        for c in analysis['analysis']['concerns']:
+            response += f"• {c}\n"
+        
+        response += f"""
 *Recommendation:* {analysis['recommendations']['primary']}
 
 *Alternative Strategies:*
-{"".join([f"• {a}\\n" for a in analysis['recommendations']['alternatives']])}
-
+"""
+        for a in analysis['recommendations']['alternatives']:
+            response += f"• {a}\n"
+        
+        response += f"""
 *Bankroll Management:*
 • Recommended Stake: {analysis['bankroll_advice']['recommended_stake']}
 • Maximum Risk: {analysis['bankroll_advice']['max_risk']}
@@ -563,8 +508,11 @@ You can also use commands:
 • Score Range: {analysis['prediction']['score_range']}
 
 *Key Factors:*
-{"".join([f"• {f}\\n" for f in analysis['key_factors']])}
-
+"""
+        for f in analysis['key_factors']:
+            response += f"• {f}\n"
+        
+        response += f"""
 *Risk Assessment:* {analysis['risk_assessment']}
 
 *Betting Recommendations:*
@@ -573,8 +521,10 @@ You can also use commands:
 • Totals: {analysis['betting_recommendations']['totals']}
 
 *Key Insights:*
-{"".join([f"• {i}\\n" for i in analysis['insights']])}
 """
+        for i in analysis['insights']:
+            response += f"• {i}\n"
+        
         await update.message.reply_text(response, parse_mode='Markdown')
 
     async def _format_value_response(self, update: Update, analysis: dict):
@@ -598,14 +548,18 @@ You can also use commands:
 • Stop Loss: {analysis['betting_advice']['stop_loss']}
 
 *Supporting Factors:*
-{"".join([f"• {f}\\n" for f in analysis['supporting_factors']])}
-
-*Risk Factors:*
-{"".join([f"• {r}\\n" for r in analysis['risk_factors']])}
-
-*Action Items:*
-{"".join([f"• {i}\\n" for i in analysis['action_items']])}
 """
+        for f in analysis['supporting_factors']:
+            response += f"• {f}\n"
+        
+        response += "\n*Risk Factors:*\n"
+        for r in analysis['risk_factors']:
+            response += f"• {r}\n"
+        
+        response += "\n*Action Items:*\n"
+        for i in analysis['action_items']:
+            response += f"• {i}\n"
+        
         await update.message.reply_text(response, parse_mode='Markdown')
 
     async def _format_bankroll_response(self, update: Update, analysis: dict):
@@ -630,37 +584,35 @@ You can also use commands:
 • Speculative: {analysis['bankroll_strategy']['current_allocation']['speculative']}
 
 *Recommendations:*
-{"".join([f"• {r}\\n" for r in analysis['bankroll_strategy']['recommended_changes']])}
-
+"""
+        for r in analysis['bankroll_strategy']['recommended_changes']:
+            response += f"• {r}\n"
+        
+        response += f"""
 *Position Management:*
 • Entry: {analysis['position_management']['entry_strategy']}
 • Exit: {analysis['position_management']['exit_strategy']}
 
 *Warnings:*
-{"".join([f"• {w}\\n" for w in analysis['warnings']])}
 """
+        for w in analysis['warnings']:
+            response += f"• {w}\n"
+        
         await update.message.reply_text(response, parse_mode='Markdown')
 
     async def _photo_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle incoming photo messages."""
         try:
-            # Log photo message details
             print("\n===== PHOTO MESSAGE RECEIVED =====")
             print(f"From: {update.message.from_user.username}")
             print(f"Number of photo sizes: {len(update.message.photo)}")
             
-            # Send initial processing message
             processing_msg = await update.message.reply_text("📸 Processing your bet slip...")
-            
-            # Get the largest photo
             photo = update.message.photo[-1]
             file = await context.bot.get_file(photo.file_id)
             print(f"Got photo file: {photo.file_id}")
             
-            # Download photo
             photo_bytes = await file.download_as_bytearray()
-            
-            # Save photo for debugging
             debug_dir = "debug_images"
             os.makedirs(debug_dir, exist_ok=True)
             photo_path = os.path.join(debug_dir, f"betslip_{len(os.listdir(debug_dir))}.jpg")
@@ -668,28 +620,20 @@ You can also use commands:
                 f.write(photo_bytes)
             print(f"Saved image to: {photo_path}")
             
-            # Update processing message
             await processing_msg.edit_text("✅ Photo saved, extracting text...")
             
-            # Initialize image preprocessor if needed
             if not hasattr(self, 'image_preprocessor'):
                 print("Initializing ImagePreprocessor")
                 from ..services.image_preprocessor import ImagePreprocessor
                 self.image_preprocessor = ImagePreprocessor()
             
-            # Extract text from image
             extracted_text = self.image_preprocessor.process_image(photo_bytes)
             print("\n----- EXTRACTED TEXT -----")
             print(extracted_text)
             print("-------------------------\n")
             
-            # Update processing message
             await processing_msg.edit_text("✅ Text extracted, analyzing bets...")
-            
-            # Analyze the extracted text
             analysis = await self.parlay_agent.analyze({'text': extracted_text})
-            
-            # Delete processing message and send analysis
             await processing_msg.delete()
             await update.message.reply_text(analysis, parse_mode='Markdown')
             
@@ -706,7 +650,6 @@ You can also use commands:
         print("\n" + "="*50)
         print("🤖 SETTING UP BOT")
         
-        # Build application
         self.application = (
             Application.builder()
             .token(self.token)
@@ -714,20 +657,16 @@ You can also use commands:
         )
         print("✓ Application built")
         
-        # Remove all existing handlers
         if self.application.handlers:
             self.application.handlers.clear()
             print("✓ Cleared existing handlers")
         
         print("\nRegistering handlers...")
-        
-        # 1. Command handlers
         self.application.add_handler(CommandHandler("start", self.start))
         self.application.add_handler(CommandHandler("help", self.help_command))
         self.application.add_handler(CommandHandler("analyze", self.analyze_parlay_command))
         print("✓ Added command handlers (/start, /help, /analyze)")
         
-        # 2. Photo and Document handlers
         photo_handler = MessageHandler(
             filters.PHOTO | (filters.Document.IMAGE | filters.Document.Category("image/jpeg") | filters.Document.MimeType("image/png")),
             self._photo_handler
@@ -735,7 +674,6 @@ You can also use commands:
         self.application.add_handler(photo_handler)
         print("✓ Added photo/document handler")
         
-        # 3. Text handler
         text_handler = MessageHandler(
             filters.TEXT & (~filters.COMMAND),
             self.handle_message
@@ -743,7 +681,6 @@ You can also use commands:
         self.application.add_handler(text_handler)
         print("✓ Added text handler")
         
-        # Add error handler
         self.application.add_error_handler(self._error_handler)
         print("✓ Added error handler")
         
@@ -767,7 +704,6 @@ You can also use commands:
         print("\n=== Starting Bot ===")
         
         try:
-            # Initialize the bot
             if not self.application:
                 self.setup()
             
@@ -777,14 +713,11 @@ You can also use commands:
             print("✓ Starting message polling...")
             print("="*50 + "\n")
             
-            # Start polling with all update types enabled
             self.application.run_polling(
                 allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True,
-                read_timeout=30,
-                write_timeout=30
+                drop_pending_updates=True
             )
             
         except Exception as e:
             print("\n❌ Failed to start bot:", str(e))
-            raise 
+            raise

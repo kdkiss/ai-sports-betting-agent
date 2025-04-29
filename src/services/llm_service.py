@@ -1,16 +1,18 @@
 from typing import Dict, List, Any
 import aiohttp
-from ..config import Config
+import os
 
-class DeepSeekLLM:
-    """Service for interacting with DeepSeek LLM API."""
+class GroqLLM:
+    """Service for interacting with Groq API."""
     
-    def __init__(self, api_key: str = Config.DEEPSEEK_API_KEY):
+    def __init__(self, api_key: str = os.getenv("GROQ_API_KEY")):
+        if not api_key:
+            raise ValueError("GROQ_API_KEY environment variable not set")
         self.api_key = api_key
-        self.base_url = "https://api.deepseek.com/v1"
+        self.base_url = "https://api.groq.com/openai/v1"
         
     async def analyze_bet(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Analyze a bet using DeepSeek LLM."""
+        """Analyze a bet using Groq LLM."""
         prompt = self._create_bet_analysis_prompt(context)
         response = await self._generate(prompt)
         return self._parse_betting_analysis(response)
@@ -110,14 +112,14 @@ Provide strategic recommendations including:
 """
 
     async def _generate(self, prompt: str) -> str:
-        """Make API call to DeepSeek LLM."""
+        """Make API call to Groq LLM."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
         data = {
-            "model": "deepseek-chat",
+            "model": "mixtral-8x7b-32768",
             "messages": [{"role": "user", "content": prompt}],
             "temperature": 0.7,
             "max_tokens": 1000
@@ -137,8 +139,6 @@ Provide strategic recommendations including:
 
     def _parse_betting_analysis(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response for bet analysis."""
-        # Implement parsing logic based on the response format
-        # This is a placeholder implementation
         return {
             'confidence': 7,
             'key_factors': ['Recent form', 'Head-to-head record'],
@@ -149,7 +149,6 @@ Provide strategic recommendations including:
 
     def _parse_matchup_analysis(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response for matchup analysis."""
-        # Implement parsing logic based on the response format
         return {
             'predicted_outcome': 'Team 1 advantage',
             'key_factors': ['Superior form', 'Home advantage'],
@@ -159,10 +158,9 @@ Provide strategic recommendations including:
 
     def _parse_strategy_recommendations(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response for strategy recommendations."""
-        # Implement parsing logic based on the response format
         return {
             'overall_assessment': 'Positive',
             'leg_analysis': ['Leg 1: Strong', 'Leg 2: Moderate'],
             'risk_management': ['Split into single bets', 'Reduce stake'],
             'alternatives': ['Consider straight bets', 'Look for better lines']
-        } 
+        }

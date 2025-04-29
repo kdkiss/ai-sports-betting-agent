@@ -7,7 +7,7 @@ from src.agents.parlay_agent import ParlayAnalysisAgent
 from src.agents.matchup_agent import MatchupAnalysisAgent
 from src.agents.value_agent import ValueBettingAgent
 from src.agents.bankroll_agent import BankrollManagementAgent
-from src.services.llm_service import DeepSeekLLM
+from src.services.llm_service import GroqLLM  # Changed from DeepSeekLLM
 from src.bot.telegram_bot import TelegramBot
 
 # Force stdout to flush immediately
@@ -23,7 +23,7 @@ def main():
     
     # Initialize shared LLM instance
     print("Initializing LLM service...")
-    llm = DeepSeekLLM()
+    llm = GroqLLM()  # Changed from DeepSeekLLM
     print("✓ LLM service initialized")
     
     # Initialize agents
@@ -48,4 +48,4 @@ def main():
     bot.run()
 
 if __name__ == '__main__':
-    main() 
+    main()
