@@ -18,6 +18,7 @@ class SportsDataClient:
     async def _get_session(self) -> aiohttp.ClientSession:
         """Get or create an aiohttp session."""
         if self.session is None or self.session.closed:
+            # Ensure compatibility with Windows by using the current event loop
             self.session = aiohttp.ClientSession()
         return self.session
 

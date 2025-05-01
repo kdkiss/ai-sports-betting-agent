@@ -1,7 +1,7 @@
 import logging
 import asyncio
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, JobQueue
-from telegram.error import NetworkError
+from telegram.error import NetworkError, InvalidToken, TelegramError
 import tenacity
 import pytz
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -170,43 +170,65 @@ class TelegramBot:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(3),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=10),
-        retry=tenacity.retry_if_exception_type(NetworkError),
+        retry=tenacity.retry_if_exception_type((NetworkError, TelegramError)),
         before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
         reraise=True
     )
     async def run_with_retry(self):
-        """Run the bot with retry logic for network errors."""
-        await self.application.initialize()
-        await self.application.start()
-        await self.application.updater.start_polling(
-            drop_pending_updates=True,
-            poll_interval=1.0,
-            timeout=10,
-            bootstrap_retries=3
-        )
-        logger.info("Bot started successfully")
-        print("Bot is now running and waiting for messages on Telegram (@daleleleelel_bot). Press Ctrl+C to stop.")
+        """Run the bot with retry logic for network and Telegram errors."""
+        try:
+            logger.debug("Initializing application...")
+            await self.application.initialize()
+            logger.debug("Starting application...")
+            await self.application.start()
+            logger.debug("Starting polling...")
+            await self.application.updater.start_polling(
+                drop_pending_updates=True,
+                poll_interval=1.0,
+                timeout=10,
+                bootstrap_retries=3
+            )
+            logger.info("Bot started successfully")
+            print("Bot is now running and waiting for messages on Telegram (@daleleleelel_bot). Press Ctrl+C to stop.")
+            # Keep the event loop alive
+            while True:
+                await asyncio.sleep(3600)  # Sleep for 1 hour to keep the loop alive
+        except InvalidToken:
+            logger.error("Invalid Telegram token provided")
+            raise
+        except TelegramError as e:
+            logger.error(f"Telegram API error: {e}", exc_info=True)
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error in polling: {e}", exc_info=True)
+            raise
 
     async def stop(self):
         """Stop the bot and clean up resources."""
-        await self.application.updater.stop()
-        await self.application.stop()
-        await self.application.shutdown()
-        # Clean up HTTP clients
-        if self.custom_sync_client:
-            self.custom_sync_client.close()
-        if self.custom_async_client:
-            await self.custom_async_client.aclose()
-        logger.info("Bot stopped and resources cleaned up")
+        logger.debug("Stopping bot...")
+        try:
+            if self.application.updater:
+                await self.application.updater.stop()
+            await self.application.stop()
+            await self.application.shutdown()
+            # Clean up HTTP clients
+            if self.custom_sync_client:
+                self.custom_sync_client.close()
+            if self.custom_async_client:
+                await self.custom_async_client.aclose()
+            logger.info("Bot stopped and resources cleaned up")
+        except Exception as e:
+            logger.error(f"Error during shutdown: {e}", exc_info=True)
 
-    def run(self):
+    async def run(self):
         """Run the bot."""
         try:
-            asyncio.run(self.run_with_retry())
+            await self.run_with_retry()  # Await the async method
         except KeyboardInterrupt:
-            asyncio.run(self.stop())
             logger.info("Bot stopped by user")
+            await self.stop()  # Await the async stop method
+            raise  # Re-raise to allow graceful exit
         except Exception as e:
             logger.error(f"Failed to start bot: {e}", exc_info=True)
-            asyncio.run(self.stop())
+            await self.stop()  # Await the async stop method
             raise

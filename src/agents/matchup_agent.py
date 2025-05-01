@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class MatchupAnalysisAgent(BaseAgent):
     """Agent responsible for analyzing matchups between teams."""
 
-    def __init__(self, llm, sports_data_client, weather_client, search_client):
+    def __init__(self, llm, sports_data_client, weather_client=None, search_client=None):
         """Initialize the agent with LLM service, sports data client, weather client, and search client."""
         super().__init__(llm=llm, sports_data_client=sports_data_client, weather_client=weather_client)
         self.sports_data_client = sports_data_client
@@ -28,17 +28,30 @@ class MatchupAnalysisAgent(BaseAgent):
 
             logger.debug(f"Context for matchup analysis: {context}")
 
+            # Fetch sports data
             stats = await self.sports_data_client.get_stats('Soccer', context)
             context['stats'] = stats
             logger.debug(f"Fetched stats: {stats}")
 
-            weather = await self.weather_client.get_forecast(context)
+            # Fetch weather data if weather_client is available
+            weather = "N/A"
+            if self.weather_client:
+                try:
+                    weather = await self.weather_client.get_forecast(context)
+                    logger.debug(f"Fetched weather: {weather}")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch weather: {e}", exc_info=True)
             context['weather'] = weather
-            logger.debug(f"Fetched weather: {weather}")
 
-            insights = await self.search_client.gather_insights(context)
-            if not insights or 'overall_sentiment' not in insights:
-                logger.warning("SearchClient returned empty or invalid insights")
+            # Fetch insights if search_client is available
+            insights = {}
+            if self.search_client:
+                try:
+                    insights = await self.search_client.gather_insights(context)
+                    if not insights or 'overall_sentiment' not in insights:
+                        logger.warning("SearchClient returned empty or invalid insights")
+                except Exception as e:
+                    logger.warning(f"Failed to fetch insights: {e}", exc_info=True)
             context['insights'] = insights
             logger.debug(f"Fetched insights: {insights}")
 
@@ -63,7 +76,7 @@ class MatchupAnalysisAgent(BaseAgent):
         team1 = context.get('team1', {}).get('name', 'Unknown Team 1')
         team2 = context.get('team2', {}).get('name', 'Unknown Team 2')
         stats = context.get('stats', {})
-        weather = context.get('weather', {})
+        weather = context.get('weather', "N/A")
         insights = context.get('insights', {})
         text = context.get('text', '')
 
@@ -81,7 +94,7 @@ class MatchupAnalysisAgent(BaseAgent):
 
         return f"""You are an expert sports analyst. Analyze the matchup between {team1} and {team2} and return the response in valid JSON format, enclosed in ```json\n...\n```. Do not include any additional text outside the JSON block. The JSON must follow this structure:
 
-```json
+
 {{
   "prediction": {{
     "winner": "{team1}",
@@ -97,37 +110,46 @@ class MatchupAnalysisAgent(BaseAgent):
   }},
   "insights": ["Insight 1"]
 }}
-```
+
 
 Matchup Details:
-- Teams: {team1} vs {team2}
-- Sport: Soccer
-- User Text: {text}
-- Team 1 Stats: {team1_stats}
-- Team 2 Stats: {team2_stats}
-- Weather: {weather}
-- Web Insights: {insights_str}
+Teams: {team1} vs {team2}
+Sport: Soccer
+User Text: {text}
+Team 1 Stats: {team1_stats}
+Team 2 Stats: {team2_stats}
+Weather: {weather}
+Web Insights: {insights_str}
 
 Instructions:
-1. Use recent form, injuries, and betting trends from Web Insights to inform your prediction.
-2. Ensure the 'winner' field is consistent with the 'score_range':
-   - If the score_range indicates a draw (e.g., '1-1'), set 'winner' to 'Draw'.
-   - Otherwise, set 'winner' to the team with the higher score in the score_range.
-3. Provide specific key factors based on the data (e.g., 'Team X on a winning streak').
-4. Base betting recommendations on implied probabilities from betting trends and expert opinions, prioritizing trends (e.g., Under/Over goals) from Web Insights.
-5. If data is limited, make a best-effort prediction but note the uncertainty in the insights.
+Use recent form, injuries, and betting trends from Web Insights to inform your prediction.
 
-Return only the JSON response in the specified format, enclosed in ```json\n...\n```."""
+Ensure the 'winner' field is consistent with the 'score_range':
+If the score_range indicates a draw (e.g., '1-1'), set 'winner' to 'Draw'.
+Otherwise, set 'winner' to the team with the higher score in the score_range.
+
+Provide specific key factors based on the data (e.g., 'Team X on a winning streak').
+
+Base betting recommendations on implied probabilities from betting trends and expert opinions, prioritizing trends (e.g., Under/Over goals) from Web Insights.
+
+If data is limited (e.g., weather or insights are N/A), make a best-effort prediction but note the uncertainty in the insights.
+
+Return only the JSON response in the specified format, enclosed in ```json\n...\n```.
+"""
+
 
     def _parse_response(self, response: str) -> Dict[str, Any]:
         """Parse the LLM response into structured matchup analysis."""
         logger.debug(f"Attempting to parse LLM response: {response}")
         try:
+            # Attempt to extract JSON from the response
             json_match = re.search(r'```json\n([\s\S]*?)\n```', response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1)
                 return json.loads(json_str)
-            return json.loads(response)
+            else:
+                # If no JSON block is found, try to parse the entire response as JSON
+                return json.loads(response)
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing failed: {e}", exc_info=True)
             return {

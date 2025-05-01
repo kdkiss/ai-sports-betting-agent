@@ -1,5 +1,8 @@
 import os
 import logging
+import asyncio
+import platform
+import selectors
 from src.bot.telegram_bot import TelegramBot
 from src.clients.sports_data_client import SportsDataClient
 from src.data.search_client import SearchClient
@@ -22,7 +25,7 @@ file_handler.setFormatter(file_formatter)
 
 # Console handler for terminal output
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
+console_handler.setLevel(logging.DEBUG)
 console_formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
 console_handler.setFormatter(console_formatter)
 
@@ -30,8 +33,10 @@ console_handler.setFormatter(console_formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
-def main():
+async def main():
     """Main function to initialize and run the bot."""
+    custom_sync_client = None
+    custom_async_client = None
     try:
         # Load environment variables
         telegram_token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -47,6 +52,7 @@ def main():
             logger.error(f"Missing environment variables: {missing}")
             raise ValueError(f"Missing environment variables: {missing}")
 
+        logger.debug("Initializing HTTP clients...")
         # Initialize custom httpx clients to avoid proxies issue
         custom_sync_client = httpx.Client(
             timeout=30.0,
@@ -57,6 +63,7 @@ def main():
             follow_redirects=True
         )
 
+        logger.debug("Initializing Groq LLM...")
         # Initialize LLM with custom clients
         groq_llm = ChatGroq(
             api_key=groq_api_key,
@@ -67,10 +74,12 @@ def main():
             async_client=custom_async_client
         )
 
+        logger.debug("Initializing SportsDataClient and SearchClient...")
         # Initialize clients
         sports_data_client = SportsDataClient(api_key=sports_api_key)
         search_client = SearchClient()
-        
+
+        logger.debug("Initializing TelegramBot...")
         # Initialize bot with HTTP clients for cleanup
         bot = TelegramBot(
             token=telegram_token,
@@ -83,10 +92,22 @@ def main():
 
         # Run the bot
         logger.info("Starting the bot...")
-        bot.run()
+        await bot.run()  # Await the async run method
     except Exception as e:
         logger.error(f"Failed to start bot: {e}", exc_info=True)
         raise
+    finally:
+        # Ensure HTTP clients are closed
+        logger.debug("Cleaning up HTTP clients...")
+        if custom_sync_client:
+            custom_sync_client.close()
+        if custom_async_client:
+            await custom_async_client.aclose()
 
 if __name__ == "__main__":
-    main()
+    # Set SelectorEventLoop on Windows to fix aiodns issue
+    if platform.system() == "Windows":
+        selector = selectors.SelectSelector()
+        loop = asyncio.SelectorEventLoop(selector)
+        asyncio.set_event_loop(loop)
+    asyncio.run(main())  # Run the async main function
